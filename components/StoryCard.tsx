@@ -1,0 +1,6 @@
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { UbiEvent } from '../lib/types';
+import { colors, gradients } from '../lib/theme';
+export function StoryCard({event,onPress}:{event:UbiEvent;onPress?:()=>void}){return <Pressable onPress={onPress}><LinearGradient colors={gradients.story} style={styles.card}><Text style={styles.badge}>Hace {event.lastStory} min · {event.district}</Text><Text style={styles.title}>{event.title}</Text><Text style={styles.text}>🔥 {event.activity} · {event.people}+ personas · {event.music.join(' / ')}</Text><View style={styles.actions}><Text style={styles.a}>🔥 fuego</Text><Text style={styles.a}>voy</Text><Text style={styles.a}>guardar</Text></View></LinearGradient></Pressable>}
+const styles=StyleSheet.create({card:{minHeight:410,borderRadius:30,padding:20,justifyContent:'flex-end',borderWidth:1,borderColor:colors.borderGold},badge:{color:colors.gold,fontWeight:'900'},title:{color:colors.text,fontSize:29,fontWeight:'900',marginTop:8},text:{color:colors.muted,lineHeight:22,marginTop:8},actions:{flexDirection:'row',gap:9,marginTop:14},a:{backgroundColor:colors.champagne,color:colors.background,borderRadius:999,overflow:'hidden',paddingHorizontal:11,paddingVertical:7,fontWeight:'900'}});

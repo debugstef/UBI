@@ -1,0 +1,2 @@
+export const colors={background:'#020806',surface:'#071A14',deepGreen:'#0B3D2E',neonGreen:'#1FFFA8',storeGreen:'#24C06F',champagne:'#FFF1C7',gold:'#F7C873',purple:'#8B3DFF',electricBlue:'#007BFF',magenta:'#FF2BD6',alert:'#FF4D6D',text:'#EFFFF7',muted:'#B8CABB',dim:'#718579',borderGreen:'rgba(31,255,168,.32)',borderGold:'rgba(247,200,115,.36)'};
+export const gradients={night:['#020806','#03100D','#08110E','#12051C'] as const,cta:['#1FFFA8','#F7C873'] as const,story:['#071A14','#0B3D2E','#341753','#020806'] as const};

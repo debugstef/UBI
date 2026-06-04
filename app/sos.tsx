@@ -1,0 +1,7 @@
+import { router } from 'expo-router';
+import { ScrollView, StyleSheet, Text } from 'react-native';
+import { Button, Card, Screen } from '../components/ui';
+import { colors } from '../lib/theme';
+const cats=[['🧊 Falta hielo/trago/mixers','Ver tiendas, pedir al grupo o compartir al chat. Alcohol requiere 18+.'],['🚕 Necesitamos transporte','Coordinar punto de encuentro y rutas externas.'],['🔊 Música/parlante','Pedir parlante o playlist al chat.'],['📍 Alguien se perdió','Punto seguro, contacto de confianza y privacidad de ubicación.'],['🚨 Seguridad/ayuda','Reportar problema, usuario, historia o evento.']];
+export default function SOS(){return <Screen><ScrollView contentContainerStyle={styles.c}><Text style={styles.back} onPress={()=>router.back()}>← Volver</Text><Text style={styles.k}>Party SOS</Text><Text style={styles.t}>Fix the night</Text><Text style={styles.p}>Resolver ayuda a coordinar rápido; no reemplaza seguridad real.</Text>{cats.map(([a,b])=><Card key={a}><Text style={styles.card}>{a}</Text><Text style={styles.p}>{b}</Text></Card>)}<Button label="Buscar Plan B" onPress={()=>router.push('/plan-b')}/><Button label="Abrir seguridad/reportes" variant="danger" onPress={()=>router.push('/safety')}/></ScrollView></Screen>}
+const styles=StyleSheet.create({c:{padding:20,paddingTop:58,paddingBottom:120,gap:14},back:{color:colors.neonGreen,fontWeight:'900'},k:{color:colors.alert,fontWeight:'900'},t:{color:colors.text,fontSize:38,fontWeight:'900'},p:{color:colors.muted,lineHeight:22},card:{color:colors.text,fontSize:18,fontWeight:'900',marginBottom:6}});
