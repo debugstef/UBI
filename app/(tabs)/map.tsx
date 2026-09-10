@@ -1,16 +1,538 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  PanResponder,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Card, Chip, Screen } from '../../components/ui';
 import { LiveMap } from '../../components/LiveMap';
-import { EventCard } from '../../components/EventCard';
+import {
+  GlassSheet,
+  GlassButton,
+  GlassChip,
+  GlassIconButton,
+  GlassBadge,
+} from '../../components/glass-ui';
 import { events, stores } from '../../lib/data';
 import { colors } from '../../lib/theme';
 
-export default function Map(){const e=events[0];return <Screen><View style={styles.root}>
-<View style={styles.header}><View><Text style={styles.kicker}>Lima · ahora</Text><Text style={styles.title}>Mapa vivo</Text></View><Pressable style={styles.icon} onPress={()=>router.push('/layers')}><Ionicons name="layers" color={colors.gold} size={22}/></Pressable></View>
-<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>{['Cerca','Trending','Amigos','Tiendas','Plan B','18+'].map((x,i)=><Chip key={x} label={x} active={i<2}/>)}</ScrollView>
-<View style={styles.map}><LiveMap events={events} stores={stores} onEventPress={(id)=>router.push(`/event/${id}`)} /><Pressable style={styles.sos} onPress={()=>router.push('/sos')}><Text style={styles.sosText}>⚡ Resolver</Text></Pressable></View>
-<Card style={styles.sheet}><Text style={styles.sheetTitle}>🔥 {e.title}</Text><Text style={styles.sheetText}>{e.people}+ personas · {e.music.join(' / ')} · S/ {e.price} · {e.friends} amigos</Text><View style={styles.row}><Button label="Ver detalle" onPress={()=>router.push(`/event/${e.id}`)} /><Button label="Plan B" variant="ghost" onPress={()=>router.push('/plan-b')} /></View></Card>
-</View></Screen>}
-const styles=StyleSheet.create({root:{flex:1,paddingTop:58},header:{paddingHorizontal:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},kicker:{color:colors.gold,fontWeight:'900'},title:{color:colors.text,fontSize:34,fontWeight:'900'},icon:{width:48,height:48,borderRadius:18,borderWidth:1,borderColor:colors.borderGold,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(3,16,13,.8)'},filters:{gap:10,paddingHorizontal:18,paddingVertical:14},map:{flex:1,marginHorizontal:12,borderRadius:30,overflow:'hidden',borderWidth:1,borderColor:colors.borderGreen},sos:{position:'absolute',top:14,right:14,backgroundColor:colors.gold,borderRadius:999,paddingHorizontal:14,paddingVertical:10},sosText:{fontWeight:'900',color:colors.background},sheet:{margin:12,marginBottom:94},sheetTitle:{color:colors.text,fontSize:20,fontWeight:'900'},sheetText:{color:colors.muted,marginVertical:10,lineHeight:21},row:{flexDirection:'row',gap:10}});
+const FILTERS = ['Cerca', 'Trending', 'Amigos', 'Tiendas', 'Alternas', '18+'] as const;
+const SHEET_PAD = 240;
+
+const displayTitle = Platform.select({
+  ios: 'HelveticaNeue-CondensedBold',
+  android: 'sans-serif-condensed',
+  default: 'system-ui',
+});
+
+function coolerRank(a: (typeof events)[0]) {
+  let score = a.people;
+  if (a.activity === 'trending') score += 80;
+  if (a.activity === 'lleno') score += 40;
+  if (a.activity === 'activo') score -= 10;
+  if (a.activity === 'bajo') score -= 20;
+  if (a.isLiveNow) score -= 5;
+  return score;
+}
+
+/**
+ * Map — Tier A revise: quiet status-slot, Plan B sheet, scrubber deslop.
+ */
+export default function Map() {
+  const [query, setQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<string>('Cerca');
+  const [selectedId, setSelectedId] = useState(events[0]?.id ?? '');
+  const [radar, setRadar] = useState(0.65);
+  const radarRef = useRef(radar);
+  radarRef.current = radar;
+
+  const isAlternas = activeFilter === 'Alternas';
+
+  const filteredEvents = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let list = events.slice();
+
+    if (q === '__quiet__') return [];
+
+    if (q.length > 0) {
+      list = list.filter(
+        (e) =>
+          e.title.toLowerCase().includes(q) ||
+          e.district.toLowerCase().includes(q) ||
+          e.type.toLowerCase().includes(q),
+      );
+    }
+
+    switch (activeFilter) {
+      case 'Trending':
+        list = list.filter((e) => e.activity === 'trending');
+        break;
+      case 'Amigos':
+        // High bar → demo quiet-night empty (friends in data are 4/7/2)
+        list = list.filter((e) => e.friends >= 10);
+        break;
+      case 'Tiendas':
+        list = [];
+        break;
+      case 'Alternas':
+        list = list
+          .filter((e) => e.activity === 'activo' || e.activity === 'bajo' || !e.isLiveNow)
+          .sort((a, b) => a.people - b.people);
+        break;
+      case '18+':
+        list = list.filter((e) => {
+          const min = parseInt(e.age.split('-')[0] || '0', 10);
+          return min >= 18;
+        });
+        break;
+      case 'Cerca':
+      default:
+        break;
+    }
+
+    return list;
+  }, [query, activeFilter]);
+
+  // A5: clear selection when empty
+  useEffect(() => {
+    if (filteredEvents.length === 0) setSelectedId('');
+  }, [filteredEvents.length]);
+
+  const selected = useMemo(() => {
+    if (!selectedId) return undefined;
+    return filteredEvents.find((e) => e.id === selectedId);
+  }, [selectedId, filteredEvents]);
+
+  // Honest LIVE: only isLiveNow
+  const liveCount = events.filter((e) => e.isLiveNow).length;
+  const isLive = selected?.isLiveNow === true;
+
+  const planBSheetOpen = isAlternas && filteredEvents.length > 0;
+  const eventSheetOpen =
+    !isAlternas && !!selectedId && filteredEvents.length > 0 && !!selected;
+  const sheetOpen = eventSheetOpen || planBSheetOpen;
+
+  const trackH = sheetOpen ? 56 : 96;
+  const trackHRef = useRef(trackH);
+  trackHRef.current = trackH;
+
+  const pan = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (e) => {
+        const y = e.nativeEvent.locationY;
+        const h = trackHRef.current;
+        setRadar(Math.max(0.05, Math.min(1, 1 - y / h)));
+      },
+      onPanResponderMove: (e) => {
+        const y = e.nativeEvent.locationY;
+        const h = trackHRef.current;
+        setRadar(Math.max(0.05, Math.min(1, 1 - y / h)));
+      },
+    }),
+  ).current;
+
+  const radarLabel =
+    radar > 0.75 ? 'Noche' : radar > 0.45 ? 'Zona' : radar > 0.2 ? 'Barrio' : 'Cerca';
+
+  const statusText =
+    filteredEvents.length === 0
+      ? 'Noche quieta · nada cerca'
+      : isAlternas
+        ? `Plan B · ${filteredEvents.length} opciones`
+        : liveCount === 0
+          ? `${events.length} cerca · noche quieta`
+          : `${liveCount} en vivo · ${events.length} cerca`;
+
+  const planBAlternatives = useMemo(() => {
+    if (!isAlternas) return [];
+    return filteredEvents.slice().sort((a, b) => coolerRank(a) - coolerRank(b)).slice(0, 2);
+  }, [isAlternas, filteredEvents]);
+
+  const isEmpty = filteredEvents.length === 0;
+
+  return (
+    <View style={styles.root}>
+      <View style={styles.map}>
+        <LiveMap
+          events={filteredEvents}
+          stores={activeFilter === 'Tiendas' ? stores : stores}
+          selectedId={eventSheetOpen ? selectedId : undefined}
+          onEventPress={(id) => {
+            if (isAlternas) return;
+            setSelectedId(id);
+          }}
+          sheetOpen={sheetOpen}
+          sheetPadBottom={SHEET_PAD}
+        />
+
+        <Pressable style={styles.sos} onPress={() => router.push('/sos')}>
+          <Text style={styles.sosText}>Resolver</Text>
+        </Pressable>
+
+        {/* Vertical scrubber — A1 deslop: transparent + brass hairline; collapses when sheet */}
+        <View
+          style={[
+            styles.radar,
+            sheetOpen ? styles.radarCompact : null,
+            { bottom: sheetOpen ? 268 : 120 },
+          ]}
+        >
+          {!sheetOpen ? <Text style={styles.radarTop}>Noche</Text> : null}
+          <View style={[styles.radarTrack, { height: trackH }]} {...pan.panHandlers}>
+            <View
+              style={[styles.radarFill, { height: Math.round(radar * trackH) }]}
+            />
+            <View
+              style={[
+                styles.radarThumb,
+                { bottom: Math.max(0, Math.round(radar * trackH) - 8) },
+              ]}
+            />
+          </View>
+          {!sheetOpen ? <Text style={styles.radarBot}>Cerca</Text> : null}
+          <Text style={styles.radarValue}>{radarLabel}</Text>
+        </View>
+      </View>
+
+      <View style={styles.chrome} pointerEvents="box-none">
+        <View style={styles.searchRow}>
+          <View style={styles.searchPill}>
+            <Ionicons name="search" size={16} color={colors.muted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Fiesta o zona…"
+              placeholderTextColor={colors.dim}
+              style={styles.searchInput}
+            />
+          </View>
+          <GlassIconButton onPress={() => router.push('/layers')} style={styles.layersBtn}>
+            <Ionicons name="layers" size={20} color={colors.champagne} />
+          </GlassIconButton>
+        </View>
+
+        <View style={styles.statusRow}>
+          <Text style={styles.status}>{statusText}</Text>
+          <Text style={styles.statusCity}>Lima</Text>
+        </View>
+
+        {/* A5: compact status-slot CTAs (not a modal) */}
+        {isEmpty ? (
+          <View style={styles.statusSlot}>
+            <Pressable
+              onPress={() => {
+                setRadar(0.9);
+                setActiveFilter('Cerca');
+                setQuery('');
+                setSelectedId(events[0]?.id ?? '');
+              }}
+              hitSlop={8}
+            >
+              <Text style={styles.statusSlotCta}>Ampliar radar</Text>
+            </Pressable>
+            <Text style={styles.statusSlotSep}>|</Text>
+            <Pressable onPress={() => router.push('/plan-b')} hitSlop={8}>
+              <Text style={styles.statusSlotCta}>Plan B</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chips}
+        >
+          {FILTERS.map((f) => (
+            <GlassChip
+              key={f}
+              label={f}
+              active={activeFilter === f}
+              onPress={() => {
+                setActiveFilter(f);
+                if (f === 'Amigos' || f === 'Tiendas' || f === 'Alternas') {
+                  setSelectedId('');
+                }
+              }}
+            />
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* A6 Plan B first-class sheet */}
+      {planBSheetOpen ? (
+        <View style={styles.sheetWrap}>
+          <GlassSheet style={styles.sheet}>
+            <View style={{ gap: 4 }}>
+              <Text style={styles.sheetKicker}>PLAN B</Text>
+              <Text style={styles.sheetTitle}>Cerca, menos calor, o con tus patas</Text>
+              <Text style={styles.sheetMeta}>
+                Si el spot se llenó o se apagó, mira opciones más suaves.
+              </Text>
+            </View>
+            {planBAlternatives.length > 0 ? (
+              <View style={styles.altList}>
+                {planBAlternatives.map((e) => (
+                  <Pressable
+                    key={e.id}
+                    style={styles.altRow}
+                    onPress={() => router.push(`/event/${e.id}`)}
+                  >
+                    <Text style={styles.altRowTitle} numberOfLines={1}>
+                      {e.title}
+                    </Text>
+                    <Text style={styles.altRowMeta}>
+                      {e.district} · {e.people}+
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : (
+              <GlassButton
+                label="Ver opciones"
+                variant="primary"
+                onPress={() => router.push('/plan-b')}
+              />
+            )}
+          </GlassSheet>
+        </View>
+      ) : eventSheetOpen && selected ? (
+        <View style={styles.sheetWrap}>
+          <GlassSheet style={styles.sheet}>
+            <View style={styles.sheetTop}>
+              <View style={{ flex: 1, gap: 4 }}>
+                <Text style={styles.sheetKicker}>
+                  {selected.district} · {selected.distance}
+                </Text>
+                <Text style={styles.sheetTitle}>{selected.title}</Text>
+                <Text style={styles.sheetMeta}>
+                  {selected.people}+ · {selected.music.join(' / ')} · S/ {selected.price}
+                </Text>
+              </View>
+              {isLive ? <GlassBadge label="LIVE" tone="green" /> : null}
+            </View>
+            <View style={styles.sheetActions}>
+              <GlassButton
+                label="Voy"
+                variant="primary"
+                style={[styles.flex, isLive ? styles.voyLive : undefined]}
+                onPress={() => router.push(`/event/${selected.id}`)}
+              />
+              <GlassButton
+                label="Plan B"
+                variant={isLive ? 'ghost' : 'primary'}
+                style={styles.flex}
+                onPress={() => router.push(`/plan-b?from=${selected.id}`)}
+              />
+            </View>
+          </GlassSheet>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: colors.background },
+  map: { flex: 1 },
+  sos: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(11,10,9,0.92)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  sosText: { fontWeight: '700', color: colors.gold, fontSize: 12 },
+  radar: {
+    position: 'absolute',
+    right: 10,
+    bottom: 120,
+    width: 48,
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(158,139,106,0.45)',
+  },
+  radarCompact: {
+    width: 36,
+    paddingVertical: 6,
+    gap: 2,
+  },
+  radarTop: {
+    color: colors.dim,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  radarBot: {
+    color: colors.dim,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  radarTrack: {
+    width: 10,
+    height: 96,
+    borderRadius: 999,
+    backgroundColor: 'rgba(158,139,106,0.15)',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  radarFill: {
+    width: '100%',
+    backgroundColor: 'rgba(158,139,106,0.55)',
+    borderRadius: 999,
+  },
+  radarThumb: {
+    position: 'absolute',
+    left: -3,
+    width: 16,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: colors.champagne,
+    borderWidth: 2,
+    borderColor: colors.background,
+  },
+  radarValue: {
+    color: colors.champagne,
+    fontSize: 9,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  chrome: {
+    position: 'absolute',
+    top: 48,
+    left: 12,
+    right: 60,
+    gap: 8,
+  },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  searchPill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 16,
+    backgroundColor: 'rgba(11, 10, 9, 0.92)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  searchInput: {
+    flex: 1,
+    color: colors.text,
+    fontWeight: '600',
+    padding: 0,
+    fontSize: 14,
+  },
+  layersBtn: {
+    backgroundColor: 'rgba(11, 10, 9, 0.92)',
+    width: 44,
+    height: 44,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+  },
+  status: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  statusCity: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  statusSlot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+  },
+  statusSlotCta: {
+    color: colors.champagne,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  statusSlotSep: {
+    color: colors.dim,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  chips: { gap: 8, paddingVertical: 2, paddingRight: 12 },
+  sheetWrap: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 96,
+  },
+  sheet: { gap: 12 },
+  sheetTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  sheetKicker: {
+    color: colors.gold,
+    fontWeight: '700',
+    fontSize: 11,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  sheetTitle: {
+    color: colors.text,
+    fontFamily: displayTitle,
+    fontWeight: '800',
+    fontSize: 26,
+    letterSpacing: -0.6,
+  },
+  sheetMeta: { color: colors.muted, fontWeight: '500', lineHeight: 20, fontSize: 13 },
+  sheetActions: { flexDirection: 'row', gap: 10 },
+  flex: { flex: 1 },
+  voyLive: {
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  altList: { gap: 8 },
+  altRow: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(158,139,106,0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(158,139,106,0.28)',
+    gap: 2,
+  },
+  altRowTitle: {
+    color: colors.text,
+    fontWeight: '700',
+    fontSize: 15,
+    letterSpacing: -0.2,
+  },
+  altRowMeta: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: '500',
+  },
+});

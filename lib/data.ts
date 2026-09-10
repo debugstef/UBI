@@ -1,3 +1,94 @@
-import { UbiEvent,UbiStore } from './types';
-export const events:UbiEvent[]=[{id:'glow-barranco',title:'Glow Night Barranco',type:'Discoteca',district:'Barranco',distance:'2.4 km',description:'Reggaetón, house y ambiente neón. Alta actividad, historias recientes y chat activo para coordinar entrada.',latitude:-12.1499,longitude:-77.0217,activity:'trending',people:140,music:['Reggaetón','House'],price:30,age:'19-24',friends:4,lastStory:7},{id:'previa-miraflores',title:'Previa Miraflores',type:'Previa',district:'Miraflores',distance:'1.1 km',description:'Previa semiabierta antes de salir. Buena para coordinar grupo y moverse luego a un hotspot.',latitude:-12.1214,longitude:-77.0307,activity:'activo',people:35,music:['Urbano','Pop'],price:0,age:'18-23',friends:7,lastStory:12},{id:'rooftop-san-isidro',title:'Rooftop San Isidro',type:'Rooftop',district:'San Isidro',distance:'3.8 km',description:'Plan premium con vista, cocktails y música house/latin. Ideal como Plan B elegante.',latitude:-12.0976,longitude:-77.0365,activity:'lleno',people:82,music:['House','Latin'],price:50,age:'21-28',friends:2,lastStory:18}];
-export const stores:UbiStore[]=[{id:'market-barranco',name:'Market 24 Barranco',district:'Barranco',distance:'400 m',latitude:-12.146,longitude:-77.019,tags:['Hielo','Agua','Snacks','Mixers']},{id:'grifo-miraflores',name:'Grifo Shop Miraflores',district:'Miraflores',distance:'900 m',latitude:-12.123,longitude:-77.026,tags:['Hielo','Vasos','Snacks','Alcohol 18+']},{id:'late-san-isidro',name:'Late Mini San Isidro',district:'San Isidro',distance:'1.2 km',latitude:-12.099,longitude:-77.034,tags:['Agua','Mixers','Snacks']}];
+import { UbiEvent, UbiStore } from './types';
+
+export const events: UbiEvent[] = [
+  {
+    id: 'glow-barranco',
+    title: 'Glow Night Barranco',
+    type: 'Discoteca',
+    district: 'Barranco',
+    distance: '2.4 km',
+    description:
+      'Reggaetón, house y ambiente neón. Alta actividad, historias recientes y chat activo para coordinar entrada.',
+    latitude: -12.1499,
+    longitude: -77.0217,
+    activity: 'trending',
+    people: 140,
+    music: ['Reggaetón', 'House'],
+    price: 30,
+    age: '19-24',
+    friends: 4,
+    lastStory: 7,
+    voyCommits: 18,
+    isLiveNow: true,
+  },
+  {
+    id: 'previa-miraflores',
+    title: 'Previa Miraflores',
+    type: 'Previa',
+    district: 'Miraflores',
+    distance: '1.1 km',
+    description:
+      'Previa semiabierta antes de salir. Buena para coordinar grupo y moverse luego a un hotspot.',
+    latitude: -12.1214,
+    longitude: -77.0307,
+    activity: 'activo',
+    people: 35,
+    music: ['Urbano', 'Pop'],
+    price: 0,
+    age: '18-23',
+    friends: 7,
+    lastStory: 12,
+    voyCommits: 6,
+    isLiveNow: true,
+  },
+  {
+    id: 'rooftop-san-isidro',
+    title: 'Rooftop San Isidro',
+    type: 'Rooftop',
+    district: 'San Isidro',
+    distance: '3.8 km',
+    description:
+      'Plan premium con vista, cocktails y música house/latin. Ideal como Plan B elegante.',
+    latitude: -12.0976,
+    longitude: -77.0365,
+    activity: 'lleno',
+    people: 82,
+    music: ['House', 'Latin'],
+    price: 50,
+    age: '21-28',
+    friends: 2,
+    lastStory: 18,
+    voyCommits: 14,
+    isLiveNow: false,
+  },
+];
+
+export const stores: UbiStore[] = [
+  {
+    id: 'market-barranco',
+    name: 'Market 24 Barranco',
+    district: 'Barranco',
+    distance: '400 m',
+    latitude: -12.146,
+    longitude: -77.019,
+    tags: ['Hielo', 'Agua', 'Snacks', 'Mixers'],
+  },
+  {
+    id: 'grifo-miraflores',
+    name: 'Grifo Shop Miraflores',
+    district: 'Miraflores',
+    distance: '900 m',
+    latitude: -12.123,
+    longitude: -77.026,
+    tags: ['Hielo', 'Vasos', 'Snacks', 'Alcohol 18+'],
+  },
+  {
+    id: 'late-san-isidro',
+    name: 'Late Mini San Isidro',
+    district: 'San Isidro',
+    distance: '1.2 km',
+    latitude: -12.099,
+    longitude: -77.034,
+    tags: ['Agua', 'Mixers', 'Snacks'],
+  },
+];

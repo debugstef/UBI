@@ -6,10 +6,23 @@
     "orientation": "portrait",
     "scheme": "ubi",
     "userInterfaceStyle": "dark",
-    "splash": { "backgroundColor": "#020806" },
-    "ios": { "supportsTablet": true },
-    "android": { "adaptiveIcon": { "backgroundColor": "#020806" } },
-    "web": { "bundler": "metro" },
-    "plugins": ["expo-router"]
+    "splash": {
+      "backgroundColor": "#020806"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#020806"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
   }
 }

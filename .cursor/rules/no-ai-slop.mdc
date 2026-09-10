@@ -1,0 +1,34 @@
+---
+description: Anti-AI-slop design rules for UBI (from unslop-ui-skill + design-slop). Apply on any UI edit.
+globs: app/**/*.{tsx,ts},components/**/*.{tsx,ts},lib/theme.ts
+alwaysApply: true
+---
+
+# UBI — No AI Slop
+
+Sources: [unslop-ui-skill](https://github.com/claudiusararu/unslop-ui-skill), [design-slop](https://github.com/wpgaurav/design-slop).
+
+## Product job
+Map-first nightlife locator for Lima. Hierarchy: **map + pins > sheet > chrome**. Decoration never outrank the job.
+
+## Hard bans
+- No indigo/violet default, no purple-blue gradient washes, no mesh/aurora/blob wallpaper on Map
+- No glassmorphism on every card — at most ONE frosted sheet (Map bottom sheet)
+- No gradient-clipped display text; no neon text-shadow logo glow
+- No gradient primary buttons as default — solid accent CTA; gold shimmer only when LIVE
+- No thick borders (≥2px) on rounded cards
+- No weight-900-everywhere; display condensed for event titles only; UI labels 600–700
+- No spaced ALL-CAPS eyebrow pills stacked over every heading
+- No glow spam: heat rings ≤1.35× pin, low opacity, breathe ≤+15%; dim non-selected when sheet open
+- No emoji-as-icons; no Inter/Geist as the brand face
+- No em-dashes in copy; specific Lima vernacular over filler
+
+## Prefer
+- Barranco ink `#0C0B0A` / `#161412` + coral accent `#E85D3B` + brass `#C4A574` — never mint neon or rainbow genre colors
+- Asymmetry (search offset, edge scrubber)
+- Genre marks as the pin (shape + color), titles only in sheet
+- Real empty/loading/error states when touching a screen
+- One primary action per surface
+
+## Finish gate
+Before shipping UI: mood ≤ purpose? each glow/glass/card earning place? recognizable as UBI not “generic nightlife template”?

@@ -1,2 +1,30 @@
-export const colors={background:'#020806',surface:'#071A14',deepGreen:'#0B3D2E',neonGreen:'#1FFFA8',storeGreen:'#24C06F',champagne:'#FFF1C7',gold:'#F7C873',purple:'#8B3DFF',electricBlue:'#007BFF',magenta:'#FF2BD6',alert:'#FF4D6D',text:'#EFFFF7',muted:'#B8CABB',dim:'#718579',borderGreen:'rgba(31,255,168,.32)',borderGold:'rgba(247,200,115,.36)'};
-export const gradients={night:['#020806','#03100D','#08110E','#12051C'] as const,cta:['#1FFFA8','#F7C873'] as const,story:['#071A14','#0B3D2E','#341753','#020806'] as const};
+/**
+ * UBI — Barranco ink, matte pass
+ * Low-chroma, dim-bar lighting. No LED mint, no hot coral neon.
+ */
+export const colors = {
+  background: '#0B0A09',
+  surface: '#151311',
+  deepGreen: '#25211E',
+  // Primary accent: dusty brick (matte), not hot coral
+  neonGreen: '#A65A45',
+  storeGreen: '#5F7364',
+  champagne: '#D9D2C5',
+  // Brass dulled
+  gold: '#9E8B6A',
+  purple: '#7A736C',
+  electricBlue: '#6E7882',
+  magenta: '#8F6558',
+  alert: '#B54E4E',
+  text: '#E6E0D6',
+  muted: '#9B958C',
+  dim: '#625E58',
+  borderGreen: 'rgba(166,90,69,0.35)',
+  borderGold: 'rgba(158,139,106,0.38)',
+};
+
+export const gradients = {
+  night: ['#0B0A09', '#100E0C', '#151311', '#0B0A09'] as const,
+  cta: ['#A65A45', '#A65A45'] as const,
+  story: ['#151311', '#25211E', '#151311', '#0B0A09'] as const,
+};

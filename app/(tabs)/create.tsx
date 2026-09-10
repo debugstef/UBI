@@ -1,5 +1,94 @@
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Button, Card, Chip, Screen, SectionTitle } from '../../components/ui';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  GlassScreen,
+  GlassCard,
+  GlassChip,
+  GlassInput,
+  GlassButton,
+  GlassKicker,
+  GlassTitle,
+  GlassSectionTitle,
+} from '../../components/glass-ui';
 import { colors } from '../../lib/theme';
-export default function Create(){return <Screen><ScrollView contentContainerStyle={styles.c}><Text style={styles.k}>Crear evento/reu</Text><Text style={styles.t}>Wizard completo, rápido y privado.</Text><SectionTitle title="Tipo de plan" subtitle="Reu, previa, discoteca, concierto, rooftop, after."/><View style={styles.chips}>{['Reu','Previa','Discoteca','Concierto','Rooftop','After'].map((x,i)=><Chip key={x} label={x} active={i===1}/>)}</View><SectionTitle title="Visibilidad" subtitle="Privado y link ocultan ubicación exacta por defecto."/><View style={styles.chips}>{['Público','Semiabierto','Por link','Privado'].map((x,i)=><Chip key={x} label={x} active={i===1}/>)}</View><Card><SectionTitle title="Detalles" subtitle="Música, aporte, aforo, reglas y ubicación."/><TextInput style={styles.input} placeholder="Nombre del plan" placeholderTextColor={colors.dim}/><TextInput style={[styles.input,styles.area]} multiline placeholder="Reglas, música, precio/aporte, aforo" placeholderTextColor={colors.dim}/><Text style={styles.check}>✓ Chat activo · ✓ Historias activas · ✓ Aprobación manual opcional</Text></Card><Button label="Publicar evento" onPress={()=>{}}/><Button label="Guardar borrador" variant="ghost" onPress={()=>{}}/></ScrollView></Screen>}
-const styles=StyleSheet.create({c:{padding:20,paddingTop:62,paddingBottom:120,gap:14},k:{color:colors.gold,fontWeight:'900'},t:{color:colors.text,fontSize:33,fontWeight:'900'},chips:{flexDirection:'row',flexWrap:'wrap',gap:10},input:{borderWidth:1,borderColor:colors.borderGreen,borderRadius:18,padding:14,color:colors.text,backgroundColor:'rgba(2,8,6,.55)',marginTop:8},area:{minHeight:94,textAlignVertical:'top'},check:{color:colors.neonGreen,fontWeight:'800',marginTop:10}});
+
+const TYPES = ['Reu', 'Previa', 'Discoteca', 'Concierto', 'Rooftop', 'After'] as const;
+const VISIBILITY = ['Público', 'Semiabierto', 'Por link', 'Privado'] as const;
+
+export default function Create() {
+  const [type, setType] = useState<string>('Previa');
+  const [visibility, setVisibility] = useState<string>('Semiabierto');
+  const [title, setTitle] = useState('');
+  const [notes, setNotes] = useState('');
+
+  return (
+    <GlassScreen style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <GlassKicker>Crear evento/reu</GlassKicker>
+          <GlassTitle>Wizard rápido y privado</GlassTitle>
+        </View>
+
+        <GlassSectionTitle title="Tipo de plan" subtitle="Reu, previa, discoteca, concierto, rooftop, after." />
+        <View style={styles.chips}>
+          {TYPES.map((t) => (
+            <GlassChip key={t} label={t} active={type === t} onPress={() => setType(t)} />
+          ))}
+        </View>
+
+        <GlassSectionTitle
+          title="Visibilidad"
+          subtitle="Privado y link ocultan ubicación exacta por defecto."
+        />
+        <View style={styles.chips}>
+          {VISIBILITY.map((v) => (
+            <GlassChip
+              key={v}
+              label={v}
+              active={visibility === v}
+              onPress={() => setVisibility(v)}
+            />
+          ))}
+        </View>
+
+        <GlassCard intensity="medium" style={styles.card}>
+          <GlassSectionTitle title="Detalles" subtitle="Música, aporte, aforo, reglas y ubicación." />
+          <GlassInput
+            value={title}
+            onChangeText={setTitle}
+            placeholder="Nombre del plan"
+          />
+          <GlassInput
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Reglas, música, precio/aporte, aforo"
+            multiline
+            style={styles.area}
+          />
+          <Text style={styles.check}>✓ Chat activo · ✓ Historias · ✓ Aprobación opcional</Text>
+        </GlassCard>
+
+        <View style={styles.actions}>
+          <GlassButton label="Publicar evento" variant="primary" onPress={() => {}} />
+          <GlassButton label="Guardar borrador" variant="ghost" onPress={() => {}} />
+        </View>
+      </ScrollView>
+    </GlassScreen>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  content: {
+    paddingTop: 58,
+    paddingHorizontal: 16,
+    paddingBottom: 120,
+    gap: 14,
+  },
+  header: { gap: 4, marginBottom: 6 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  card: { gap: 10 },
+  area: { minHeight: 94, textAlignVertical: 'top' },
+  check: { color: colors.neonGreen, fontWeight: '800', marginTop: 4 },
+  actions: { gap: 10, marginTop: 4 },
+});
