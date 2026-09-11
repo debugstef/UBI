@@ -1,0 +1,8 @@
+qa-shots\social\01-root.png
+qa-shots\social\02-feed.png
+qa-shots\social\03-map.png
+qa-shots\social\04-create.png
+qa-shots\social\05-reels.png
+qa-shots\social\06-profile.png
+qa-shots\social\07-onboarding.png
+2026-09-11T06:12:00.567Z

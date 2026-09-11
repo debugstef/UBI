@@ -1,5 +1,6 @@
 /**
- * UBI Glass UI — glassmorphism kit (additive; does not replace components/ui.tsx)
+ * UBI Glass UI — dichroic Cupertino glassmorphism kit
+ * (additive; does not replace components/ui.tsx)
  *
  * Usage:
  *   import { GlassScreen, GlassCard, GlassButton, GlassChip } from '../components/glass-ui';
@@ -25,24 +26,39 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, gradients } from '../lib/theme';
+import { BlurView } from 'expo-blur';
+import { colors, gradients, space, type } from '../lib/theme';
 
-/* ─── Glass tokens (harmonized with lib/theme.ts) ─────────────────────────── */
+/** Real BlurView on iOS/Android; StyleSheet frost fill elsewhere (web / unsupported). */
+const BLUR_NATIVE = Platform.OS === 'ios' || Platform.OS === 'android';
+const blurIntensity = (i: 'subtle' | 'medium' | 'strong') =>
+  i === 'subtle' ? 22 : i === 'strong' ? 52 : 36;
+
+/* ─── Glass tokens (dichroic indigo/violet) ───────────────────────────────── */
 
 export const glass = {
-  fillSubtle: 'rgba(22, 20, 18, 0.45)',
-  fillMedium: 'rgba(18, 16, 14, 0.62)',
-  fillStrong: 'rgba(12, 11, 10, 0.78)',
-  fillLift: 'rgba(166, 90, 69, 0.07)',
-  border: 'rgba(255, 255, 255, 0.12)',
-  borderGreen: 'rgba(166, 90, 69, 0.32)',
-  borderGold: 'rgba(196, 165, 116, 0.4)',
+  fillSubtle: 'rgba(18, 10, 46, 0.38)',
+  fillMedium: 'rgba(18, 10, 46, 0.55)',
+  fillStrong: 'rgba(18, 10, 46, 0.72)',
+  fillLift: 'rgba(79, 107, 255, 0.08)',
+  border: 'rgba(255, 255, 255, 0.14)',
+  borderBlue: 'rgba(79, 107, 255, 0.45)',
+  borderViolet: 'rgba(139, 126, 200, 0.40)',
+  borderCyan: 'rgba(92, 225, 255, 0.50)',
+  /** @deprecated use borderBlue — kept for Barranco-era call sites */
+  borderGreen: 'rgba(79, 107, 255, 0.45)',
+  /** @deprecated use borderViolet */
+  borderGold: 'rgba(139, 126, 200, 0.40)',
   highlight: 'rgba(255, 255, 255, 0.16)',
-  glowGreen: colors.neonGreen,
+  glowBlue: colors.electricBlue,
+  glowCyan: colors.cyanGlow,
+  glowViolet: colors.gold,
+  /** @deprecated aliases */
+  glowGreen: colors.electricBlue,
   glowGold: colors.gold,
-  sheen: ['rgba(255,255,255,0.10)', 'rgba(255,255,255,0.02)', 'transparent'] as const,
+  sheen: ['rgba(255,255,255,0.14)', 'rgba(255,255,255,0.04)', 'transparent'] as const,
   radius: {
-    sm: 14,
+    sm: 12,
     md: 20,
     lg: 16,
     xl: 20,
@@ -51,28 +67,30 @@ export const glass = {
 } as const;
 
 type Intensity = 'subtle' | 'medium' | 'strong';
+type GlowTone = 'none' | 'blue' | 'cyan' | 'violet' | 'green' | 'gold';
 
 const fillFor = (i: Intensity) =>
   i === 'subtle' ? glass.fillSubtle : i === 'strong' ? glass.fillStrong : glass.fillMedium;
 
 /* ─── Ambient night screen ────────────────────────────────────────────────── */
 
-export function GlassScreen({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+export function GlassScreen({ children, style }: { children?: ReactNode; style?: StyleProp<ViewStyle> }) {
   return (
     <LinearGradient colors={[...gradients.night]} style={[styles.screen, style]}>
       <View pointerEvents="none" style={styles.ambient}>
         <LinearGradient
-          colors={['rgba(166,90,69,0.05)', 'transparent']}
+          colors={[...gradients.meshViolet]}
           style={styles.blobTL}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         />
         <LinearGradient
-          colors={['rgba(196,165,116,0.05)', 'transparent']}
+          colors={[...gradients.meshBlue]}
           style={styles.blobC}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
         />
+        {/* R3 austerity: no cyan ambient blob — frost hero is violet/blue only */}
       </View>
       {children}
     </LinearGradient>
@@ -86,21 +104,43 @@ export function GlassSurface({
   intensity = 'medium',
   glow = 'none',
   style,
+  blur = true,
 }: {
   children?: ReactNode;
   intensity?: Intensity;
-  glow?: 'none' | 'green' | 'gold';
+  glow?: GlowTone;
   style?: StyleProp<ViewStyle>;
+  /** When true (default) use expo-blur on native; StyleSheet fill fallback otherwise */
+  blur?: boolean;
 }) {
+  const g = glow === 'green' ? 'blue' : glow === 'gold' ? 'violet' : glow;
   const glowStyle =
-    glow === 'green'
-      ? styles.glowGreen
-      : glow === 'gold'
-        ? styles.glowGold
-        : null;
+    g === 'blue' ? styles.glowBlue : g === 'cyan' ? styles.glowCyan : g === 'violet' ? styles.glowViolet : null;
+  const fill = fillFor(intensity);
+  const useBlur = blur && BLUR_NATIVE;
 
   return (
-    <View style={[styles.surface, { backgroundColor: fillFor(intensity) }, glowStyle, style]}>
+    <View
+      style={[
+        styles.surface,
+        useBlur ? styles.surfaceBlurHost : { backgroundColor: fill },
+        glowStyle,
+        style,
+      ]}
+    >
+      {useBlur ? (
+        <>
+          <BlurView
+            intensity={blurIntensity(intensity)}
+            tint="dark"
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: fill }]}
+          />
+        </>
+      ) : null}
       <LinearGradient
         colors={[...glass.sheen]}
         start={{ x: 0, y: 0 }}
@@ -118,19 +158,22 @@ export function GlassCard({
   intensity = 'medium',
   glow = 'none',
   style,
+  blur = true,
 }: {
   children?: ReactNode;
   intensity?: Intensity;
-  glow?: 'none' | 'green' | 'gold';
+  glow?: GlowTone;
   style?: StyleProp<ViewStyle>;
+  blur?: boolean;
 }) {
   return (
-    <GlassSurface intensity={intensity} glow={glow} style={[styles.card, style]}>
+    <GlassSurface intensity={intensity} glow={glow} blur={blur} style={[styles.card, style]}>
       {children}
     </GlassSurface>
   );
 }
 
+/** ONE primary frosted sheet — keep glow none; quieter chrome elsewhere */
 export function GlassSheet({
   children,
   style,
@@ -157,11 +200,11 @@ export function GlassSectionTitle({ title, subtitle }: { title: string; subtitle
   );
 }
 
-export function GlassKicker({ children }: { children: string }) {
+export function GlassKicker({ children }: { children?: ReactNode }) {
   return <Text style={styles.kicker}>{children}</Text>;
 }
 
-export function GlassTitle({ children }: { children: string }) {
+export function GlassTitle({ children }: { children?: ReactNode }) {
   return <Text style={styles.title}>{children}</Text>;
 }
 
@@ -206,11 +249,34 @@ export function GlassChip({
   );
 }
 
-export function GlassBadge({ label, tone = 'green' }: { label: string; tone?: 'green' | 'gold' | 'alert' }) {
+export function GlassBadge({
+  label,
+  tone = 'blue',
+}: {
+  label: string;
+  tone?: 'blue' | 'cyan' | 'violet' | 'magenta' | 'alert' | 'green' | 'gold';
+}) {
+  const t = tone === 'green' ? 'blue' : tone === 'gold' ? 'violet' : tone;
   const toneStyle =
-    tone === 'gold' ? styles.badgeGold : tone === 'alert' ? styles.badgeAlert : styles.badgeGreen;
+    t === 'cyan'
+      ? styles.badgeCyan
+      : t === 'violet'
+        ? styles.badgeViolet
+        : t === 'magenta'
+          ? styles.badgeMagenta
+          : t === 'alert'
+            ? styles.badgeAlert
+            : styles.badgeBlue;
   const textStyle =
-    tone === 'gold' ? styles.badgeTextGold : tone === 'alert' ? styles.badgeTextAlert : styles.badgeTextGreen;
+    t === 'cyan'
+      ? styles.badgeTextCyan
+      : t === 'violet'
+        ? styles.badgeTextViolet
+        : t === 'magenta'
+          ? styles.badgeTextMagenta
+          : t === 'alert'
+            ? styles.badgeTextAlert
+            : styles.badgeTextBlue;
   return (
     <View style={[styles.badge, toneStyle]}>
       <Text style={[styles.badgeText, textStyle]}>{label}</Text>
@@ -236,7 +302,11 @@ export function GlassButton({
   style,
   disabled,
   ...props
-}: PressableProps & { label: string; variant?: BtnVariant }) {
+}: Omit<PressableProps, 'style'> & {
+  label: string;
+  variant?: BtnVariant;
+  style?: StyleProp<ViewStyle>;
+}) {
   const scale = useRef(new Animated.Value(1)).current;
   const bump = (to: number) =>
     Animated.spring(scale, { toValue: to, useNativeDriver: true, friction: 5, tension: 240 }).start();
@@ -274,7 +344,7 @@ export function GlassIconButton({
   onPress,
   style,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
 }) {
@@ -306,6 +376,24 @@ export function GlassInput(props: TextInputProps) {
   );
 }
 
+
+/* ─── Tab bar frost (BlurView + StyleSheet fallback) ──────────────────────── */
+
+export function TabBarFrostBackground() {
+  if (BLUR_NATIVE) {
+    return (
+      <View style={styles.tabFrostHost}>
+        <BlurView intensity={48} tint="dark" style={StyleSheet.absoluteFillObject} />
+        <View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFillObject, { backgroundColor: glass.fillStrong }]}
+        />
+      </View>
+    );
+  }
+  return <View style={[styles.tabFrostHost, { backgroundColor: glass.fillStrong }]} />;
+}
+
 /* ─── Styles ──────────────────────────────────────────────────────────────── */
 
 const styles = StyleSheet.create({
@@ -323,8 +411,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: -80,
     bottom: 80,
-    width: 320,
-    height: 320,
+    width: 260,
+    height: 260,
     borderRadius: 999,
   },
   blobC: {
@@ -343,41 +431,56 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.35,
-        shadowRadius: 24,
-        shadowOffset: { width: 0, height: 12 },
+        shadowColor: '#0B0620',
+        shadowOpacity: 0.28,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
       },
-      android: { elevation: 8 },
+      android: { elevation: 4 },
       default: {},
     }),
+  },
+  surfaceBlurHost: {
+    backgroundColor: 'transparent',
+  },
+  tabFrostHost: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: glass.radius.md,
+    overflow: 'hidden',
   },
   sheen: {
     ...StyleSheet.absoluteFillObject,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: glass.highlight,
   },
-  glowGreen: {
-    borderColor: glass.borderGreen,
-    shadowColor: glass.glowGreen,
-    shadowOpacity: 0.35,
-    shadowRadius: 22,
+  glowBlue: {
+    borderColor: glass.borderBlue,
+    shadowColor: glass.glowBlue,
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 0 },
   },
-  glowGold: {
-    borderColor: glass.borderGold,
-    shadowColor: glass.glowGold,
-    shadowOpacity: 0.28,
-    shadowRadius: 20,
+  glowCyan: {
+    borderColor: glass.borderCyan,
+    shadowColor: glass.glowCyan,
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  glowViolet: {
+    borderColor: glass.borderViolet,
+    shadowColor: glass.glowViolet,
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 0 },
   },
 
   card: {
-    padding: 16,
+    padding: space[4],
   },
   sheet: {
-    padding: 16,
-    paddingTop: 10,
+    padding: space[4],
+    paddingTop: space[2],
     borderTopLeftRadius: glass.radius.xl,
     borderTopRightRadius: glass.radius.xl,
     borderBottomLeftRadius: glass.radius.lg,
@@ -389,127 +492,137 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.28)',
-    marginBottom: 12,
+    marginBottom: space[3],
   },
 
-  sectionWrap: { gap: 4 },
+  sectionWrap: { gap: space[1] },
   sectionTitle: {
+    /* R3 typography: headline on cards (not title3) */
     color: colors.text,
-    fontWeight: '900',
-    fontSize: 18,
-    letterSpacing: 0.2,
+    ...type.headline,
   },
   sectionSub: {
     color: colors.muted,
-    lineHeight: 21,
+    ...type.callout,
   },
   kicker: {
     color: colors.gold,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-    fontSize: 12,
+    ...type.caption1,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   title: {
     color: colors.text,
-    fontSize: 28,
+    ...type.title1,
     fontWeight: '700',
-    letterSpacing: -0.4,
   },
 
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: space[2],
     borderWidth: 1,
-    borderColor: 'rgba(247,200,115,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(18,10,46,0.38)',
     borderRadius: glass.radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    paddingHorizontal: space[3],
+    paddingVertical: space[2],
   },
   chipActive: {
-    borderColor: glass.borderGreen,
-    backgroundColor: 'rgba(166,90,69,0.14)',
+    borderColor: glass.borderBlue,
+    backgroundColor: 'rgba(79,107,255,0.18)',
   },
-  chipText: { color: colors.muted, fontWeight: '800' },
-  chipTextActive: { color: colors.text },
+  chipText: { color: colors.muted, ...type.caption1, fontWeight: '600' },
+  chipTextActive: { color: colors.text, fontWeight: '700' },
 
   badge: {
     borderRadius: glass.radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: space[3],
+    paddingVertical: space[2],
     borderWidth: 1,
   },
-  badgeGreen: {
-    backgroundColor: 'rgba(31,255,168,0.14)',
-    borderColor: glass.borderGreen,
+  badgeBlue: {
+    /* Regular rank — lifted fill + light text for ≥4.5:1 on frost */
+    backgroundColor: 'rgba(79,107,255,0.36)',
+    borderColor: 'rgba(200,212,255,0.55)',
   },
-  badgeGold: {
-    backgroundColor: 'rgba(247,200,115,0.14)',
-    borderColor: glass.borderGold,
+  badgeCyan: {
+    backgroundColor: 'rgba(92,225,255,0.12)',
+    borderColor: glass.borderCyan,
+  },
+  badgeViolet: {
+    backgroundColor: 'rgba(139,126,200,0.16)',
+    borderColor: glass.borderViolet,
+  },
+  badgeMagenta: {
+    /* Leyenda apex — luminous fill + cyan rim; text #E8E0FF ≥4.5:1 */
+    backgroundColor: 'rgba(123,92,255,0.34)',
+    borderColor: 'rgba(92,225,255,0.65)',
   },
   badgeAlert: {
-    backgroundColor: 'rgba(255,77,109,0.16)',
-    borderColor: 'rgba(255,77,109,0.5)',
+    backgroundColor: 'rgba(79,107,255,0.20)',
+    borderColor: 'rgba(92,225,255,0.45)',
   },
-  badgeText: { fontWeight: '900', fontSize: 12 },
-  badgeTextGreen: { color: colors.neonGreen },
-  badgeTextGold: { color: colors.gold },
-  badgeTextAlert: { color: colors.alert },
+  badgeText: { ...type.caption1, fontWeight: '700' },
+  badgeTextBlue: { color: '#E8ECFF' },
+  badgeTextCyan: { color: colors.cyanGlow },
+  badgeTextViolet: { color: colors.gold },
+  badgeTextMagenta: { color: '#E8E0FF' },
+  badgeTextAlert: { color: '#E8ECFF' },
 
   pill: {
     borderRadius: glass.radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: space[3],
+    paddingVertical: space[1],
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: glass.border,
   },
-  pillText: { color: colors.champagne, fontWeight: '800', fontSize: 12 },
+  pillText: { color: colors.text, ...type.caption1, fontWeight: '700' },
 
-  btnWrap: { borderRadius: 12, overflow: 'hidden', minHeight: 48 },
+  btnWrap: { borderRadius: glass.radius.sm, overflow: 'hidden', minHeight: 48 },
   btnDisabled: { opacity: 0.45 },
   btnPrimary: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    borderRadius: glass.radius.sm,
+    paddingVertical: space[4],
+    paddingHorizontal: space[4],
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.neonGreen,
+    backgroundColor: colors.electricBlue,
   },
-  btnPrimaryText: { fontWeight: '700', color: '#F2EDE6', fontSize: 15, letterSpacing: 0.2 },
+  btnPrimaryText: { ...type.subhead, fontWeight: '700', color: '#F2F4FF' }, // letterSpacing from type.subhead
   btnGhost: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: glass.radius.sm,
     borderWidth: 1,
-    borderColor: glass.borderGold,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    borderColor: glass.borderViolet,
+    paddingVertical: space[4],
+    paddingHorizontal: space[4],
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(247,200,115,0.08)',
+    backgroundColor: 'rgba(42,22,80,0.45)',
   },
-  btnGhostText: { color: colors.champagne, fontWeight: '900', fontSize: 15 },
+  btnGhostText: { ...type.subhead, color: colors.text, fontWeight: '700' },
   btnDanger: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: glass.radius.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,77,109,0.55)',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    borderColor: 'rgba(255,92,122,0.55)',
+    paddingVertical: space[4],
+    paddingHorizontal: space[4],
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,77,109,0.18)',
+    backgroundColor: 'rgba(255,92,122,0.16)',
   },
-  btnDangerText: { color: colors.alert, fontWeight: '900', fontSize: 15 },
+  btnDangerText: { ...type.subhead, color: colors.alert, fontWeight: '700' },
 
   iconBtn: {
     width: 48,
     height: 48,
-    borderRadius: 12,
+    borderRadius: glass.radius.sm,
     borderWidth: 1,
-    borderColor: glass.borderGold,
+    borderColor: glass.border,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: glass.fillMedium,
@@ -517,11 +630,13 @@ const styles = StyleSheet.create({
 
   input: {
     borderWidth: 1,
-    borderColor: glass.borderGreen,
-    borderRadius: 12,
-    padding: 14,
+    borderColor: glass.borderBlue,
+    borderRadius: glass.radius.sm,
+    padding: space[4],
+    minHeight: 48,
     color: colors.text,
-    backgroundColor: 'rgba(2,8,6,0.45)',
+    backgroundColor: 'rgba(11,6,32,0.55)',
+    ...type.body,
     fontWeight: '600',
   },
 });

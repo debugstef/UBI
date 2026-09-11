@@ -1,0 +1,4 @@
+LIVE_badge_count=1
+status_line_hits=1
+quiet_empty_hits=3
+plan_b_copy_hits=4

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   PanResponder,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LiveMap } from '../../components/LiveMap';
 import {
@@ -19,19 +18,15 @@ import {
   GlassIconButton,
   GlassBadge,
 } from '../../components/glass-ui';
-import { events, stores } from '../../lib/data';
-import { colors } from '../../lib/theme';
+import { stores } from '../../lib/data';
+import { useEvents, useSelectedEventId, selectEvent, type UbiEvent } from '../../lib/eventsStore';
+import { colors, type, space } from '../../lib/theme';
+import { ReputationBadge } from '../../components/profile/ReputationBadge';
 
-const FILTERS = ['Cerca', 'Trending', 'Amigos', 'Tiendas', 'Alternas', '18+'] as const;
+const FILTERS = ['Cerca', 'Tendencia', 'Amigos', 'Tiendas', 'Alternas', '18+'] as const;
 const SHEET_PAD = 240;
 
-const displayTitle = Platform.select({
-  ios: 'HelveticaNeue-CondensedBold',
-  android: 'sans-serif-condensed',
-  default: 'system-ui',
-});
-
-function coolerRank(a: (typeof events)[0]) {
+function coolerRank(a: UbiEvent) {
   let score = a.people;
   if (a.activity === 'trending') score += 80;
   if (a.activity === 'lleno') score += 40;
@@ -42,12 +37,28 @@ function coolerRank(a: (typeof events)[0]) {
 }
 
 /**
- * Map — Tier A revise: quiet status-slot, Plan B sheet, scrubber deslop.
+ * Map — dichroic Cupertino: electricBlue/violet chrome, one frosted sheet.
  */
 export default function Map() {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<string>('Cerca');
+  const events = useEvents();
   const [selectedId, setSelectedId] = useState(events[0]?.id ?? '');
+  const params = useLocalSearchParams<{ eventId?: string }>();
+  const storeSelectedId = useSelectedEventId();
+
+  // R3b: PostCard "Ver en mapa" → fly-to via query param or eventsStore select
+  useEffect(() => {
+    const fromParam = typeof params.eventId === 'string' ? params.eventId : undefined;
+    const target = fromParam || storeSelectedId || undefined;
+    if (!target) return;
+    const exists = events.some((e) => e.id === target);
+    if (!exists) return;
+    setActiveFilter('Cerca');
+    setQuery('');
+    setSelectedId(target);
+  }, [params.eventId, storeSelectedId, events]);
+
   const [radar, setRadar] = useState(0.65);
   const radarRef = useRef(radar);
   radarRef.current = radar;
@@ -70,7 +81,7 @@ export default function Map() {
     }
 
     switch (activeFilter) {
-      case 'Trending':
+      case 'Tendencia':
         list = list.filter((e) => e.activity === 'trending');
         break;
       case 'Amigos':
@@ -87,8 +98,9 @@ export default function Map() {
         break;
       case '18+':
         list = list.filter((e) => {
+          if (typeof e.is18Plus === 'boolean') return e.is18Plus;
           const min = parseInt(e.age.split('-')[0] || '0', 10);
-          return min >= 18;
+          return min >= 18 || e.age === '18+';
         });
         break;
       case 'Cerca':
@@ -168,16 +180,17 @@ export default function Map() {
           onEventPress={(id) => {
             if (isAlternas) return;
             setSelectedId(id);
+            selectEvent(id);
           }}
           sheetOpen={sheetOpen}
           sheetPadBottom={SHEET_PAD}
         />
 
         <Pressable style={styles.sos} onPress={() => router.push('/sos')}>
-          <Text style={styles.sosText}>Resolver</Text>
+          <Text style={styles.sosText}>SOS</Text>
         </Pressable>
 
-        {/* Vertical scrubber — A1 deslop: transparent + brass hairline; collapses when sheet */}
+        {/* Vertical scrubber — dichroic violet/blue hairline; collapses when sheet */}
         <View
           style={[
             styles.radar,
@@ -272,7 +285,7 @@ export default function Map() {
           <GlassSheet style={styles.sheet}>
             <View style={{ gap: 4 }}>
               <Text style={styles.sheetKicker}>PLAN B</Text>
-              <Text style={styles.sheetTitle}>Cerca, menos calor, o con tus patas</Text>
+              <Text style={styles.sheetTitle}>Cerca, menos calor, o con tus amigos</Text>
               <Text style={styles.sheetMeta}>
                 Si el spot se llenó o se apagó, mira opciones más suaves.
               </Text>
@@ -316,8 +329,14 @@ export default function Map() {
                   {selected.people}+ · {selected.music.join(' / ')} · S/ {selected.price}
                 </Text>
               </View>
-              {isLive ? <GlassBadge label="LIVE" tone="green" /> : null}
+              {isLive ? <GlassBadge label="LIVE" tone="cyan" /> : null}
             </View>
+            {selected.hostId ? (
+              <View style={styles.hostRow}>
+                <Text style={styles.hostLabel}>Host</Text>
+                <ReputationBadge userId={selected.hostId} compact />
+              </View>
+            ) : null}
             <View style={styles.sheetActions}>
               <GlassButton
                 label="Voy"
@@ -326,8 +345,14 @@ export default function Map() {
                 onPress={() => router.push(`/event/${selected.id}`)}
               />
               <GlassButton
+                label="Chat"
+                variant="ghost"
+                style={styles.flex}
+                onPress={() => router.push(`/chat/${selected.id}`)}
+              />
+              <GlassButton
                 label="Plan B"
-                variant={isLive ? 'ghost' : 'primary'}
+                variant="ghost"
                 style={styles.flex}
                 onPress={() => router.push(`/plan-b?from=${selected.id}`)}
               />
@@ -346,14 +371,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: 'rgba(11,10,9,0.92)',
+    backgroundColor: 'rgba(11,6,32,0.88)',
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: colors.gold,
+    borderColor: 'rgba(255,255,255,0.14)',
   },
-  sosText: { fontWeight: '700', color: colors.gold, fontSize: 12 },
+  sosText: { fontWeight: '700', color: colors.muted, fontSize: 12 },
   radar: {
     position: 'absolute',
     right: 10,
@@ -365,7 +390,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: 'transparent',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(158,139,106,0.45)',
+    borderColor: 'rgba(79,107,255,0.40)',
   },
   radarCompact: {
     width: 36,
@@ -390,13 +415,13 @@ const styles = StyleSheet.create({
     width: 10,
     height: 96,
     borderRadius: 999,
-    backgroundColor: 'rgba(158,139,106,0.15)',
+    backgroundColor: 'rgba(42,22,80,0.55)',
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
   radarFill: {
     width: '100%',
-    backgroundColor: 'rgba(158,139,106,0.55)',
+    backgroundColor: 'rgba(79,107,255,0.65)',
     borderRadius: 999,
   },
   radarThumb: {
@@ -405,14 +430,14 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 999,
-    backgroundColor: colors.champagne,
+    backgroundColor: colors.electricBlue,
     borderWidth: 2,
     borderColor: colors.background,
   },
   radarValue: {
     color: colors.champagne,
     fontSize: 9,
-    fontWeight: '800',
+    fontWeight: '700',
     marginTop: 2,
   },
   chrome: {
@@ -431,19 +456,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 16,
-    backgroundColor: 'rgba(11, 10, 9, 0.92)',
+    backgroundColor: 'rgba(18, 10, 46, 0.72)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.14)',
   },
   searchInput: {
     flex: 1,
     color: colors.text,
+    ...type.footnote,
     fontWeight: '600',
     padding: 0,
-    fontSize: 14,
   },
   layersBtn: {
-    backgroundColor: 'rgba(11, 10, 9, 0.92)',
+    backgroundColor: 'rgba(18, 10, 46, 0.72)',
     width: 44,
     height: 44,
   },
@@ -455,14 +480,12 @@ const styles = StyleSheet.create({
   },
   status: {
     color: colors.text,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+    ...type.subhead,
   },
   statusCity: {
     color: colors.gold,
-    fontSize: 11,
-    fontWeight: '700',
+    ...type.caption2,
+    fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
@@ -474,14 +497,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   statusSlotCta: {
-    color: colors.champagne,
-    fontSize: 12,
+    color: colors.electricBlue,
+    ...type.caption1,
     fontWeight: '700',
     letterSpacing: 0.2,
   },
   statusSlotSep: {
     color: colors.dim,
-    fontSize: 12,
+    ...type.caption1,
     fontWeight: '600',
   },
   chips: { gap: 8, paddingVertical: 2, paddingRight: 12 },
@@ -491,48 +514,58 @@ const styles = StyleSheet.create({
     right: 12,
     bottom: 96,
   },
-  sheet: { gap: 12 },
+  sheet: { gap: space[3] },
   sheetTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   sheetKicker: {
     color: colors.gold,
-    fontWeight: '700',
-    fontSize: 11,
-    letterSpacing: 0.4,
+    ...type.caption1,
+    fontWeight: '500',
+    letterSpacing: 0.2,
     textTransform: 'uppercase',
   },
   sheetTitle: {
     color: colors.text,
-    fontFamily: displayTitle,
-    fontWeight: '800',
-    fontSize: 26,
-    letterSpacing: -0.6,
+    ...type.title1,
+    fontWeight: '700',
   },
-  sheetMeta: { color: colors.muted, fontWeight: '500', lineHeight: 20, fontSize: 13 },
+  sheetMeta: { color: colors.muted, ...type.footnote },
+  hostRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    paddingVertical: space[1],
+  },
+  hostLabel: {
+    color: colors.muted,
+    ...type.caption1,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
   sheetActions: { flexDirection: 'row', gap: 10 },
   flex: { flex: 1 },
+  /** Cyan edge on LIVE Voy only — not rainbow */
   voyLive: {
-    borderWidth: 1,
-    borderColor: colors.gold,
+    borderWidth: 1.5,
+    borderColor: colors.cyanGlow,
   },
   altList: { gap: 8 },
   altRow: {
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: 'rgba(158,139,106,0.08)',
+    backgroundColor: 'rgba(42,22,80,0.45)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(158,139,106,0.28)',
+    borderColor: 'rgba(255,255,255,0.14)',
     gap: 2,
   },
   altRowTitle: {
     color: colors.text,
+    ...type.subhead,
     fontWeight: '700',
-    fontSize: 15,
-    letterSpacing: -0.2,
   },
   altRowMeta: {
     color: colors.muted,
-    fontSize: 12,
-    fontWeight: '500',
+    ...type.caption1,
   },
 });

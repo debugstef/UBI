@@ -16,6 +16,9 @@ export type UbiEvent = {
   lastStory: number;
   voyCommits: number;
   isLiveNow: boolean;
+  isPrivate?: boolean;
+  is18Plus?: boolean;
+  hostId?: string;
 };
 export type UbiStore = {
   id: string;

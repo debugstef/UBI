@@ -1,6 +1,70 @@
+/**
+ * components/EventCard.tsx
+ */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Card } from './ui';
+import { GlassCard, GlassBadge } from './glass-ui';
 import { UbiEvent } from '../lib/types';
-import { colors } from '../lib/theme';
-export function EventCard({event,onPress}:{event:UbiEvent;onPress?:()=>void}){return <Pressable onPress={onPress}><Card><View style={styles.row}><Text style={styles.t}>{event.title}</Text><Text style={styles.g}>{event.activity}</Text></View><Text style={styles.p}>{event.district} · {event.distance} · {event.people}+ personas</Text><Text style={styles.p}>🎵 {event.music.join(' / ')} · S/ {event.price} · {event.friends} amigos</Text></Card></Pressable>}
-const styles=StyleSheet.create({row:{flexDirection:'row',justifyContent:'space-between',gap:10},t:{color:colors.text,fontWeight:'900',fontSize:17,flex:1},g:{color:colors.gold,fontWeight:'900'},p:{color:colors.muted,marginTop:7,lineHeight:21}});
+import { colors, space, type } from '../lib/theme';
+
+function locationLabel(event: UbiEvent) {
+  if (event.isPrivate) return `Cerca de ${event.district}`;
+  return `${event.district} · ${event.distance}`;
+}
+
+export function EventCard({
+  event,
+  onPress,
+}: {
+  event: UbiEvent;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button">
+      <GlassCard intensity="medium" glow={event.isLiveNow ? 'blue' : 'none'} style={styles.card}>
+        <View style={styles.row}>
+          <Text style={styles.title} numberOfLines={2}>
+            {event.title}
+          </Text>
+          <GlassBadge
+            label={event.activity === 'trending' ? 'Tendencia' : event.activity}
+            tone={event.activity === 'trending' ? 'cyan' : event.activity === 'lleno' ? 'violet' : 'blue'}
+          />
+        </View>
+        <Text style={styles.meta}>
+          {locationLabel(event)} · {event.people}+ personas
+        </Text>
+        <Text style={styles.meta}>
+          {event.music.join(' / ')} · {event.price === 0 ? 'Gratis' : `S/ ${event.price}`} ·{' '}
+          {event.friends} amigos
+        </Text>
+        {event.isPrivate ? (
+          <Text style={styles.privacy}>Privado · dirección exacta oculta</Text>
+        ) : null}
+      </GlassCard>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: { gap: space[2] },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: space[3],
+  },
+  title: {
+    color: colors.text,
+    ...type.headline,
+    flex: 1,
+  },
+  meta: {
+    color: colors.muted,
+    ...type.footnote,
+  },
+  privacy: {
+    color: colors.gold,
+    ...type.caption1,
+    marginTop: space[1],
+  },
+});

@@ -1,35 +1,63 @@
+/**
+ * components/ui.tsx — dichroic Screen/Card wrappers (compat layer over glass-ui)
+ * Destination: components/ui.tsx → imports ../lib/theme and ./glass-ui
+ */
 import { ReactNode } from 'react';
-import { Pressable, PressableProps, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { colors, gradients } from '../lib/theme';
+import {
+  PressableProps,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+  StyleProp,
+} from 'react-native';
+import {
+  GlassScreen,
+  GlassCard,
+  GlassButton,
+  GlassChip,
+  GlassSectionTitle,
+} from './glass-ui';
+import { colors, space, type } from '../lib/theme';
 
-export function Screen({ children }: { children: ReactNode }) {
-  return (
-    <LinearGradient colors={gradients.night} style={{ flex: 1 }}>
-      {children}
-    </LinearGradient>
-  );
+export function Screen({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <GlassScreen style={style}>{children}</GlassScreen>;
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+export function Card({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <GlassCard intensity="medium" style={style}>
+      {children}
+    </GlassCard>
+  );
 }
 
 export function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <View>
-      <Text style={styles.st}>{title}</Text>
-      {subtitle ? <Text style={styles.ss}>{subtitle}</Text> : null}
-    </View>
-  );
+  return <GlassSectionTitle title={title} subtitle={subtitle} />;
 }
 
-export function Chip({ label, active = false }: { label: string; active?: boolean }) {
-  return (
-    <View style={[styles.chip, active && styles.chipA]}>
-      <Text style={[styles.ct, active && styles.ctA]}>{label}</Text>
-    </View>
-  );
+export function Chip({
+  label,
+  active = false,
+  onPress,
+}: {
+  label: string;
+  active?: boolean;
+  onPress?: () => void;
+}) {
+  return <GlassChip label={label} active={active} onPress={onPress} />;
 }
 
 export function Button({
@@ -37,81 +65,36 @@ export function Button({
   variant = 'primary',
   style,
   ...props
-}: PressableProps & { label: string; variant?: 'primary' | 'ghost' | 'danger' }) {
-  if (variant === 'ghost') {
-    return (
-      <Pressable style={[styles.ghost, style]} {...props}>
-        <Text style={styles.gt}>{label}</Text>
-      </Pressable>
-    );
-  }
-  if (variant === 'danger') {
-    return (
-      <Pressable style={[styles.danger, style]} {...props}>
-        <Text style={styles.dt}>{label}</Text>
-      </Pressable>
-    );
-  }
+}: Omit<PressableProps, 'style' | 'children'> & {
+  label: string;
+  variant?: 'primary' | 'ghost' | 'danger';
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <GlassButton label={label} variant={variant} style={style} {...props} />;
+}
+
+/** Subtle demo ribbon for pitch screens */
+export function DemoBanner({ label = 'Demo data' }: { label?: string }) {
   return (
-    <Pressable style={[styles.btnWrap, style]} {...props}>
-      <View style={styles.btn}>
-        <Text style={styles.bt}>{label}</Text>
-      </View>
-    </Pressable>
+    <View style={styles.demo} accessibilityRole="text">
+      <Text style={styles.demoText}>{label}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: 'rgba(22,20,18,0.9)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 14,
-    padding: 16,
-  },
-  st: { color: colors.text, fontWeight: '700', fontSize: 17, marginBottom: 5 },
-  ss: { color: colors.muted, lineHeight: 21, fontWeight: '500' },
-  chip: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(247,200,115,0.2)',
-    backgroundColor: 'rgba(255,255,255,0.04)',
+  demo: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: space[3],
+    paddingVertical: space[1],
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  chipA: {
-    borderColor: colors.neonGreen,
-    backgroundColor: 'rgba(166,90,69,0.14)',
-  },
-  ct: { color: colors.muted, fontWeight: '600' },
-  ctA: { color: colors.text },
-  btnWrap: { borderRadius: 12, overflow: 'hidden' },
-  btn: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    backgroundColor: colors.neonGreen,
-  },
-  bt: { fontWeight: '700', color: '#F2EDE6' },
-  ghost: {
-    borderRadius: 12,
+    backgroundColor: 'rgba(92,225,255,0.12)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.borderGold,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    backgroundColor: 'rgba(247,200,115,0.06)',
+    borderColor: 'rgba(92,225,255,0.45)',
   },
-  gt: { color: colors.champagne, fontWeight: '700' },
-  danger: {
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,77,109,0.5)',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,77,109,0.12)',
+  demoText: {
+    color: colors.cyanGlow,
+    ...type.caption1,
+    fontWeight: '600',
   },
-  dt: { color: colors.alert, fontWeight: '700' },
 });

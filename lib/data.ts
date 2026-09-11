@@ -1,67 +1,20 @@
-import { UbiEvent, UbiStore } from './types';
+/**
+ * lib/data.ts — re-exports live catalog from eventsStore
+ * Map / chats should prefer useEvents() for reactivity; getEvents() for one-shot.
+ */
+export { getEvents, addEvent, subscribeEvents, useEvents, useAddEvent } from './eventsStore';
+export type { UbiEvent, CreateEventInput } from './eventsStore';
+import { getEvents } from './eventsStore';
+import type { UbiStore } from './types';
 
-export const events: UbiEvent[] = [
-  {
-    id: 'glow-barranco',
-    title: 'Glow Night Barranco',
-    type: 'Discoteca',
-    district: 'Barranco',
-    distance: '2.4 km',
-    description:
-      'Reggaetón, house y ambiente neón. Alta actividad, historias recientes y chat activo para coordinar entrada.',
-    latitude: -12.1499,
-    longitude: -77.0217,
-    activity: 'trending',
-    people: 140,
-    music: ['Reggaetón', 'House'],
-    price: 30,
-    age: '19-24',
-    friends: 4,
-    lastStory: 7,
-    voyCommits: 18,
-    isLiveNow: true,
+/** @deprecated Prefer getEvents()/useEvents() — kept for call sites that import { events }. */
+export const events = new Proxy([] as ReturnType<typeof getEvents>, {
+  get(_t, prop, receiver) {
+    const live = getEvents();
+    const value = Reflect.get(live, prop, receiver);
+    return typeof value === 'function' ? value.bind(live) : value;
   },
-  {
-    id: 'previa-miraflores',
-    title: 'Previa Miraflores',
-    type: 'Previa',
-    district: 'Miraflores',
-    distance: '1.1 km',
-    description:
-      'Previa semiabierta antes de salir. Buena para coordinar grupo y moverse luego a un hotspot.',
-    latitude: -12.1214,
-    longitude: -77.0307,
-    activity: 'activo',
-    people: 35,
-    music: ['Urbano', 'Pop'],
-    price: 0,
-    age: '18-23',
-    friends: 7,
-    lastStory: 12,
-    voyCommits: 6,
-    isLiveNow: true,
-  },
-  {
-    id: 'rooftop-san-isidro',
-    title: 'Rooftop San Isidro',
-    type: 'Rooftop',
-    district: 'San Isidro',
-    distance: '3.8 km',
-    description:
-      'Plan premium con vista, cocktails y música house/latin. Ideal como Plan B elegante.',
-    latitude: -12.0976,
-    longitude: -77.0365,
-    activity: 'lleno',
-    people: 82,
-    music: ['House', 'Latin'],
-    price: 50,
-    age: '21-28',
-    friends: 2,
-    lastStory: 18,
-    voyCommits: 14,
-    isLiveNow: false,
-  },
-];
+});
 
 export const stores: UbiStore[] = [
   {

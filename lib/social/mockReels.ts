@@ -1,0 +1,65 @@
+/**
+ * lib/social/mockReels.ts
+ */
+import type { ReelItem } from './types';
+
+export const MOCK_REELS: ReelItem[] = [
+  {
+    id: 'r1',
+    authorId: 'u-vale',
+    caption: 'Drop en vivo · Miraflores rooftop #LimaNights',
+    audioLabel: 'Vale RMX — Midnight Pulse',
+    tint: '#2A1650',
+    likes: 1280,
+    comments: 94,
+    shares: 41,
+    liked: false,
+    videoUri: 'mock://video/reel-vale-1',
+  },
+  {
+    id: 'r2',
+    authorId: 'u-marco',
+    caption: 'Entrada a la previa · Cerca de San Isidro',
+    audioLabel: 'Club SI — Warmup',
+    tint: '#120A2E',
+    likes: 640,
+    comments: 32,
+    shares: 18,
+    liked: true,
+    videoUri: 'mock://video/reel-marco-1',
+  },
+  {
+    id: 'r3',
+    authorId: 'u-lia',
+    caption: 'Timelapse Barranco neón 📸',
+    audioLabel: 'Original audio — lia.neon',
+    tint: '#3D1F6E',
+    likes: 890,
+    comments: 55,
+    shares: 27,
+    liked: false,
+  },
+  {
+    id: 'r4',
+    authorId: 'u-nico',
+    caption: 'Del mar al after 🌊',
+    audioLabel: 'Waves — Nico edit',
+    tint: '#0B0620',
+    likes: 412,
+    comments: 19,
+    shares: 9,
+    liked: false,
+    videoUri: 'mock://video/reel-nico-1',
+  },
+  {
+    id: 'r5',
+    authorId: 'u-sofia',
+    caption: 'Outfit check antes de salir ✨',
+    audioLabel: 'Glow Up — trending',
+    tint: '#4F6BFF',
+    likes: 2100,
+    comments: 140,
+    shares: 88,
+    liked: false,
+  },
+];

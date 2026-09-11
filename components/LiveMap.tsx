@@ -3,13 +3,14 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { UbiEvent, UbiStore } from '../lib/types';
 import { colors } from '../lib/theme';
 
+/** Dichroic pin fills — electricBlue / violet / cyan / magenta mono, not Barranco brick */
 const GENRE: Record<string, { fill: string; shape: string }> = {
-  Discoteca: { fill: colors.neonGreen, shape: 'diamond' },
-  Previa: { fill: colors.gold, shape: 'circle' },
+  Discoteca: { fill: colors.electricBlue, shape: 'diamond' },
+  Previa: { fill: colors.twilightVioletLift, shape: 'circle' },
   Rooftop: { fill: colors.electricBlue, shape: 'tri' },
   Concierto: { fill: colors.magenta, shape: 'square' },
-  After: { fill: colors.champagne, shape: 'square' },
-  Reu: { fill: colors.muted, shape: 'circle' },
+  After: { fill: colors.electricBlue, shape: 'square' },
+  Reu: { fill: colors.electricBlue, shape: 'circle' },
 };
 
 type HeatBand = 'soft' | 'mid' | 'hot';
@@ -51,7 +52,7 @@ function markHtml(
   }
 
   const opacity = dimmed ? 0.45 : 1;
-  return `<div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(12,11,10,.82);border-radius:999px;border:1px solid rgba(255,255,255,.18);cursor:pointer;opacity:${opacity}">${ring}${inner}</div>`;
+  return `<div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(18,10,46,.82);border-radius:999px;border:1px solid rgba(255,255,255,.14);cursor:pointer;opacity:${opacity}">${ring}${inner}</div>`;
 }
 
 function loadLeaflet(): Promise<any> {
@@ -100,8 +101,8 @@ function WebLeafletMap({
   const containerRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<Record<string, any>>({});
-  const onPressRef = useRef(onEventPress);
-  onPressRef.current = onEventPress;
+  const onPressRef = useRef<((id: string) => void) | undefined>(onEventPress);
+  onPressRef.current = onEventPress ?? undefined;
   const sheetOpenRef = useRef(sheetOpen);
   sheetOpenRef.current = sheetOpen;
   const sheetPadRef = useRef(sheetPadBottom);
@@ -119,6 +120,7 @@ function WebLeafletMap({
           attributionControl: false,
         }).setView([-12.12, -77.03], 13);
 
+        // Esri dark gray — pairs with deepIndigo chrome
         L.tileLayer(
           'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
           {
@@ -171,7 +173,7 @@ function WebLeafletMap({
 
       for (const e of events) {
         keep.add(e.id);
-        const g = GENRE[e.type] ?? { fill: colors.neonGreen, shape: 'circle' };
+        const g = GENRE[e.type] ?? { fill: colors.electricBlue, shape: 'circle' };
         const selected = e.id === selectedId;
         const heat = heatBandFromCommits(e.voyCommits ?? 0);
         const dimmed = open && !selected;
@@ -214,7 +216,7 @@ function WebLeafletMap({
       for (const s of stores) {
         const sid = `store-${s.id}`;
         keep.add(sid);
-        const html = `<div style="width:20px;height:20px;border-radius:4px;background:rgba(95,115,100,.25);border:1px solid ${colors.storeGreen};display:flex;align-items:center;justify-content:center;color:${colors.storeGreen};font-size:12px;font-weight:700">+</div>`;
+        const html = `<div style="width:20px;height:20px;border-radius:4px;background:rgba(79,107,255,.12);border:1px solid ${colors.electricBlue};display:flex;align-items:center;justify-content:center;color:${colors.electricBlue};font-size:12px;font-weight:700">+</div>`;
         const icon = L.divIcon({
           className: 'ubi-store',
           html,

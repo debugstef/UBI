@@ -1,16 +1,25 @@
+/**
+ * components/StoryCard.tsx
+ */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassBadge, glass } from './glass-ui';
 import { UbiEvent } from '../lib/types';
-import { colors, gradients } from '../lib/theme';
+import { colors, gradients, space, type } from '../lib/theme';
 
-export function StoryCard({ event, onPress }: { event: UbiEvent; onPress?: () => void }) {
+export function StoryCard({
+  event,
+  onPress,
+}: {
+  event: UbiEvent;
+  onPress?: () => void;
+}) {
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} accessibilityRole="button">
       <LinearGradient colors={[...gradients.story]} style={styles.card}>
         <View style={styles.glassEdge} />
         <Text style={styles.badge}>
-          Hace {event.lastStory} min · {event.district}
+          Hace {event.lastStory} min · {event.isPrivate ? `Near ${event.district}` : event.district}
         </Text>
         <Text style={styles.title}>{event.title}</Text>
         <Text style={styles.text}>
@@ -26,7 +35,7 @@ export function StoryCard({ event, onPress }: { event: UbiEvent; onPress?: () =>
           <View style={styles.pill}>
             <Text style={styles.pillText}>guardar</Text>
           </View>
-          <GlassBadge label={event.type} tone="gold" />
+          <GlassBadge label={event.type} tone="violet" />
         </View>
       </LinearGradient>
     </Pressable>
@@ -37,32 +46,49 @@ const styles = StyleSheet.create({
   card: {
     minHeight: 280,
     borderRadius: 28,
-    padding: 20,
+    padding: space[5],
     justifyContent: 'flex-end',
     borderWidth: 1,
-    borderColor: glass.borderGold,
+    borderColor: glass.borderViolet,
     overflow: 'hidden',
+    width: 260,
   },
   glassEdge: {
     ...StyleSheet.absoluteFillObject,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(255,255,255,0.22)',
   },
-  badge: { color: colors.gold, fontWeight: '800', fontSize: 12 },
+  badge: {
+    color: colors.gold,
+    ...type.caption1,
+    fontWeight: '600',
+  },
   title: {
     color: colors.text,
-    fontSize: 28,
-    fontWeight: '800',
-    marginTop: 8,
-    letterSpacing: -0.4,
+    ...type.title1,
+    marginTop: space[2],
   },
-  text: { color: colors.muted, lineHeight: 22, marginTop: 8, fontWeight: '600' },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14, alignItems: 'center' },
+  text: {
+    color: colors.muted,
+    ...type.callout,
+    marginTop: space[2],
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: space[2],
+    marginTop: space[4],
+    alignItems: 'center',
+  },
   pill: {
-    backgroundColor: colors.champagne,
+    backgroundColor: 'rgba(242,244,255,0.92)',
     borderRadius: 999,
     paddingHorizontal: 11,
     paddingVertical: 7,
   },
-  pillText: { color: colors.background, fontWeight: '800', fontSize: 12 },
+  pillText: {
+    color: colors.deepIndigo,
+    fontWeight: '700',
+    fontSize: type.caption1.fontSize,
+  },
 });

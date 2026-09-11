@@ -1,0 +1,41 @@
+---
+description: UBI dichroic Cupertino glass — no-ai-slop replacement — intentional glass + indigo/violet
+globs: ["**/*.{tsx,ts,jsx,js,css}"]
+alwaysApply: true
+---
+
+# Dichroic Cupertino (UBI design language)
+
+Cupertino-grade minimalism + intentional immersive glass. Purple-blue dichroic mono only.
+
+## ALLOW
+
+- Deep indigo / twilight violet backgrounds: `#0B0620`, `#120A2E`, `#2A1650`, `#3D1F6E`
+- Electric blue primary `#4F6BFF`; cyan glow `#5CE1FF` sparingly (LIVE edge only)
+- Text `#F2F4FF` / muted `#A8B0D6`
+- Borders `rgba(255,255,255,0.14)` micro-highlights
+- Glass fills: strong `rgba(18,10,46,0.72)`, medium `0.55`, subtle `0.38`
+- ONE primary frosted sheet; other chrome quieter
+- Soft violet→blue ambient mesh blobs at low opacity
+- System / SF-like / system-ui condensed titles; tracking −0.4 to −0.8 on display
+- UI labels 600–700; padding 16–20
+- Calm status rows (not shouty)
+
+## BAN
+
+- Rainbow neon, aurora spam, multi-hue glows
+- Inter, Geist, or generic AI-default sans stacks as display faces
+- Glass-on-every-card (frost only where it earns hierarchy)
+- Barranco brick / dusty coral (`#A65A45`) as primary
+- Hot mint LED, coral neon, champagne-brass chrome as the system
+- Fake “live” pulse animations; heat rings only from real voyCommits
+
+## Map
+
+- Retheme sheet, scrubber, chips, Voy CTA to electricBlue / violet
+- Solid primary Voy; optional cyan edge on LIVE only
+- Esri dark (or darker) tiles; pin fills from dichroic accents
+
+## Rule of one
+
+One primary frosted surface per view. Prefer layered translucency + LinearGradient sheens over blur spam.

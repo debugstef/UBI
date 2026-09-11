@@ -1,0 +1,5 @@
+splash_ok
+Feed_missing
+Crear_missing
+Chats_missing
+Perfil_missing
